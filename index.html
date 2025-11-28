@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Lelang - Final Scoring</title>
+    
+    <!-- STYLE: Tailwind CSS (Butuh Internet) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- ICON: FontAwesome (Butuh Internet) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Utility Classes */
+        .selected-btn {
+            border-color: #2563eb !important;
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            transform: scale(1.02);
+            font-weight: 800;
+            opacity: 1 !important; 
+        }
+        .bobot-btn-active {
+            transform: scale(1.05);
+            font-weight: 900;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-width: 2px;
+        }
+        .correct-answer { background-color: #d1fae5; border-color: #34d399; }
+        .wrong-answer { background-color: #fee2e2; border-color: #f87171; }
+        
+        /* Disabled State */
+        .btn-disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        /* Custom Scrollbar untuk Panel */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-slate-800">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white p-3 flex justify-between items-center shadow-lg z-50 border-b-4 border-yellow-500 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <!-- Logo Lomba -->
+            <img src="logo.jpg" alt="Logo Lomba" class="w-10 h-10 rounded-full shadow-lg object-cover border-2 border-yellow-500">
+            
+            <div class="flex items-center gap-2">
+                <i class="fas fa-gavel text-xl text-yellow-500"></i>
+                <div>
+                    <h1 class="text-xl font-extrabold uppercase tracking-widest leading-none">Auction Challenge</h1>
+                    <div class="text-[10px] text-slate-400 mt-0.5 tracking-[0.2em]">SISTEM FOKUS LELANG V8.7</div>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button id="switchModeBtn" onclick="app.switchMode()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                <i class="fas fa-calculator"></i> <span id="modeText">Mode Penilaian</span>
+            </button>
+            <div class="w-px h-6 bg-slate-700 mx-1 self-center"></div>
+            <button onclick="app.toggleFullScreen()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2 transition">
+                <i class="fas fa-expand"></i> Layar Penuh
+            </button>
+            <button onclick="app.showResetConfirm()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2 shadow">
+                <i class="fas fa-trash-alt"></i> Reset
+            </button>
+            <button onclick="app.openSetup()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                <i class="fas fa-cog"></i> Setup Tim
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER (Parent Flex) -->
+    <div class="flex flex-1 overflow-hidden relative h-full">
+        
+        <!-- SIDEBAR OPERATOR (KIRI) -->
+        <aside class="w-[380px] bg-white border-r border-gray-200 flex flex-col z-40 shadow-2xl h-full max-h-full overflow-hidden">
+            
+            <!-- PANEL LELANG (Wrapper) -->
+            <div id="auctionPanel" class="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+                
+                <!-- DASHBOARD KUOTA GLOBAL -->
+                <div class="p-4 bg-yellow-50 border-b border-yellow-300 flex-shrink-0">
+                    <h4 class="text-xs font-extrabold text-yellow-800 uppercase mb-2 flex items-center">
+                        <i class="fas fa-warehouse mr-1"></i> Global Stock (Sisa Soal)
+                    </h4>
+                    <div id="globalQuotaDashboard" class="grid grid-cols-4 gap-1 text-center text-xs">
+                        <!-- Dashboard akan di-render di sini -->
+                    </div>
+                </div>
+                
+                <!-- RANDOMIZER KOTAK LELANG (DIHAPUS) -->
+                <!-- <div class="p-4 bg-slate-100 border-b border-gray-300 flex-shrink-0">
+                    <button onclick="app.randomizeNextBox()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg shadow-lg active:scale-95 transition flex justify-center items-center gap-2 text-sm uppercase">
+                        <i class="fas fa-dice"></i> ACAK KOTAK LELANG BERIKUTNYA
+                    </button>
+                    <div id="randomizerResult" class="mt-2 text-center text-sm font-semibold">
+                        <span class="text-gray-500">Tekan tombol di atas untuk mengacak urutan.</span>
+                    </div>
+                </div> -->
+
+                <!-- FORM INPUT (Bagian Atas - Tidak Scroll) -->
+                <div class="p-5 bg-slate-50 border-b border-gray-200 flex-shrink-0">
+                    <div class="flex items-center mb-4 text-slate-700 font-bold text-sm uppercase tracking-wide">
+                        <i class="fas fa-gavel mr-2 text-blue-600"></i> Input Lelang
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">1. Pemenang</label>
+                        <select id="inputTeam" class="w-full p-2.5 bg-white border-2 border-gray-300 rounded-lg font-bold text-gray-800 text-sm focus:border-blue-500 outline-none cursor-pointer"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">2. Kategori Kotak</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="app.selectType('PREMIUM')" id="btnPremium" class="border-2 border-gray-300 bg-white p-2 rounded-lg flex flex-col items-center justify-center transition hover:bg-purple-50 group opacity-60">
+                                <i class="fas fa-crown text-purple-600 mb-1 text-lg"></i>
+                                <span class="text-xs font-bold text-purple-700">PREMIUM</span>
+                            </button>
+                            <button onclick="app.selectType('STANDAR')" id="btnStandar" class="border-2 border-gray-300 bg-white p-2 rounded-lg flex flex-col items-center justify-center transition hover:bg-blue-50 group opacity-60">
+                                <i class="fas fa-box text-blue-600 mb-1 text-lg"></i>
+                                <span class="text-xs font-bold text-blue-700">STANDAR</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="selectedType">
+                    </div>
+
+                    <!-- INPUT BOBOT BARU -->
+                    <div id="bobotContainer" class="mb-3 hidden">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">3. Pilih Bobot (Stok Terbatas)</label>
+                        <div class="grid grid-cols-2 gap-2" id="bobotOptions">
+                            <!-- Diisi oleh JS -->
+                        </div>
+                        <input type="hidden" id="selectedBobot">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">4. Harga Deal</label>
+                        <div class="flex shadow-sm">
+                            <span class="bg-slate-800 text-white px-4 py-2 rounded-l-lg font-bold text-sm flex items-center">Pts</span>
+                            <input type="number" id="inputPrice" class="w-full border-2 border-gray-300 rounded-r-lg p-2 font-mono font-bold text-xl text-slate-800 focus:border-blue-500 outline-none" placeholder="0">
+                        </div>
+                    </div>
+
+                    <button onclick="app.submitTransaction()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg active:scale-95 transition flex justify-center items-center gap-2 text-sm uppercase">
+                        <i class="fas fa-save"></i> SIMPAN LELANG
+                    </button>
+                </div>
+                
+                <!-- RIWAYAT LELANG (Bagian Bawah - Scrollable) -->
+                <div class="flex-1 bg-gray-100 p-0 flex flex-col border-t border-gray-200 min-h-0 overflow-hidden">
+                    <div class="bg-gray-200 px-4 py-2 text-[10px] font-bold text-gray-500 uppercase flex-shrink-0">Riwayat Transaksi (Undo)</div>
+                    <div id="historyList" class="flex-1 overflow-y-auto space-y-2 p-3 custom-scroll">
+                        <!-- Item History -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL PENILAIAN (Wrapper) -->
+            <div id="scoringPanel" class="flex flex-col flex-1 h-full min-h-0 overflow-hidden hidden">
+                <!-- Header Penilaian -->
+                <div class="p-5 bg-slate-50 border-b border-gray-200 flex-shrink-0 sticky top-0 z-10">
+                    <div class="flex items-center mb-2 text-slate-700 font-bold text-sm uppercase tracking-wide">
+                        <i class="fas fa-graduation-cap mr-2 text-green-600"></i> Input Penilaian
+                    </div>
+                    <p class="text-xs text-gray-600 leading-tight">Tandai setiap kotak yang dibeli, lalu tekan tombol biru di bawah.</p>
+                </div>
+                <!-- Daftar Soal -->
+                <div id="scoringInputs" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll min-h-0">
+                    <!-- Input Soal -->
+                </div>
+                <!-- Footer Tombol -->
+                <div class="p-4 border-t border-gray-200 bg-white flex-shrink-0 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                    <button onclick="app.showScoreConfirm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg active:scale-95 transition flex justify-center items-center gap-2 text-sm uppercase">
+                        <i class="fas fa-trophy"></i> HITUNG SKOR FINAL
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- LAYAR UTAMA (KANAN - PROYEKTOR) -->
+        <main class="flex-1 bg-slate-200 p-4 md:p-8 overflow-y-auto relative flex flex-col items-center h-full custom-scroll">
+            
+            <!-- AUCTION DISPLAY -->
+            <div id="auctionDisplay" class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-300 z-10 flex-shrink-0">
+                <div class="bg-slate-800 p-4 border-b-4 border-yellow-500 flex justify-between items-center">
+                    <h2 class="text-white font-extrabold text-2xl tracking-wider uppercase flex items-center">
+                        <i class="fas fa-chart-line text-yellow-500 mr-2"></i> STATUS LELANG
+                    </h2>
+                </div>
+                <!-- Perubahan Struktur Tabel untuk Keterbacaan di Layar Besar -->
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 uppercase text-sm font-extrabold border-b-2 border-slate-200">
+                            <th class="py-4 px-4 w-1/4">Nama Tim</th>
+                            <th class="py-4 px-4 text-center">Saldo Poin</th>
+                            <th class="py-4 px-4 text-center">Durasi Total (Min)</th>
+                            <th class="py-4 px-4 text-center">Slot Terpakai</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreboardBody" class="divide-y divide-gray-100 text-sm"></tbody>
+                </table>
+                <!-- Keterangan Slot di Luar Tabel -->
+                <div class="p-2 bg-slate-50 text-xs text-gray-600">
+                    Keterangan Slot: Maksimal 1 Premium (P) & 2 Standar (S).
+                </div>
+            </div>
+
+            <!-- SCORE DISPLAY (Ranking Table) -->
+            <div id="scoreDisplay" class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-300 z-10 hidden mt-8 flex-shrink-0">
+                <div class="bg-slate-800 p-4 border-b-4 border-green-500 flex justify-between items-center">
+                    <h2 class="text-white font-extrabold text-2xl tracking-wider uppercase flex items-center">
+                        <i class="fas fa-trophy text-green-500 mr-2"></i> SKOR AKHIR & RANKING
+                    </h2>
+                </div>
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-green-100 text-slate-700 uppercase text-xs font-extrabold border-b-2 border-green-200">
+                            <th class="py-3 px-4 w-16">Rank</th>
+                            <th class="py-3 px-4 w-1/4">Nama Tim</th>
+                            <th class="py-3 px-4 text-center">Modal Awal</th>
+                            <th class="py-3 px-4 text-center">Biaya Lelang</th>
+                            <th class="py-3 px-4 text-center">Total Profit</th>
+                            <th class="py-3 px-4 text-center text-red-600">Total Loss</th>
+                            <th class="py-3 px-4 text-center w-40 text-xl text-green-700">TOTAL AKHIR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="finalScoreBody" class="divide-y divide-gray-100 text-sm"></tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL POPUP: ALERT & CONFIRM & SETUP -->
+    <div id="customAlert" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-80 p-6 text-center transform scale-100">
+            <div id="alertIcon" class="text-4xl mb-4 text-red-500"><i class="fas fa-exclamation-circle"></i></div>
+            <h3 id="alertTitle" class="font-extrabold text-lg text-gray-800 mb-2 uppercase">Peringatan</h3>
+            <p id="alertMsg" class="text-sm text-gray-600 mb-6 leading-relaxed">Pesan error disini.</p>
+            <button onclick="document.getElementById('customAlert').classList.add('hidden')" class="bg-slate-800 text-white px-6 py-2.5 rounded-lg font-bold w-full transition">OK</button>
+        </div>
+    </div>
+
+    <div id="customConfirm" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-80 p-6 text-center">
+            <div class="text-4xl mb-4 text-blue-500"><i class="fas fa-question-circle"></i></div>
+            <h3 class="font-extrabold text-lg text-gray-800 mb-2">Konfirmasi</h3>
+            <p id="confirmMsg" class="text-sm text-gray-600 mb-6 font-medium">Yakin ingin melakukan ini?</p>
+            <div class="flex gap-3">
+                <button onclick="app.closeConfirm()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-bold w-1/2 transition">Batal</button>
+                <button id="confirmBtnYes" onclick="app.closeConfirm()" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold w-1/2 hover:bg-blue-700 transition">Ya</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="setupModal" class="hidden fixed inset-0 bg-black/80 z-[90] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-[480px] overflow-hidden">
+            <div class="bg-blue-600 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-database"></i> Database Tim</h3>
+                <button onclick="app.closeSetup()" class="hover:bg-blue-700 w-8 h-8 rounded flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 text-xs text-blue-800 rounded-r">
+                    <strong>Panduan:</strong> Masukkan satu tim per baris.<br>
+                    Format: <code>Nama Tim, Saldo Awal</code>
+                </div>
+                <textarea id="setupInput" rows="8" class="w-full border-2 border-gray-200 p-3 text-sm rounded-lg bg-gray-50 mb-4 font-mono focus:border-blue-500 focus:outline-none text-slate-700"></textarea>
+                <div class="flex justify-end gap-3">
+                    <button onclick="app.closeSetup()" class="px-5 py-2.5 rounded-lg font-bold text-sm text-gray-600 hover:bg-gray-100 border border-gray-300 transition">Batal</button>
+                    <button onclick="app.saveSetup()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-blue-700 shadow-md transition flex items-center gap-2">
+                        <i class="fas fa-save"></i> SIMPAN PERUBAHAN
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            // Data Utama
+            teams: [],
+            auctionRecords: [], 
+            mode: 'auction', 
+            finalScores: [], 
+            currentRevealRank: 4, 
+            
+            // Konfigurasi Poin Soal & Kuota (Global Stock)
+            SOAL_CONFIG: {
+                '75': { category: 'PREMIUM', duration: 5, price: 70, max: 1 },
+                '50': { category: 'PREMIUM', duration: 3, price: 50, max: 2 },
+                '40': { category: 'STANDAR', duration: 2, price: 40, max: 3 },
+                '25': { category: 'STANDAR', duration: 1, price: 30, max: 4 }
+            },
+            
+            // Data Default
+            defaultTeams: [
+                { name: "Tim A", initialBalance: 1000 },
+                { name: "Tim B", initialBalance: 1000 },
+                { name: "Tim C", initialBalance: 1000 },
+                { name: "Tim D", initialBalance: 1000 }
+            ],
+
+            // --- INIT & STORAGE ---
+            init: function() {
+                this.loadData();
+                this.renderAll();
+                document.getElementById('modeText').innerText = "Mode Penilaian"; 
+            },
+
+            loadData: function() {
+                try {
+                    const t = localStorage.getItem('auc_final_teams');
+                    const r = localStorage.getItem('auc_final_records');
+                    if (t) {
+                        this.teams = JSON.parse(t).map(team => ({
+                            ...team,
+                            pSlots: team.pSlots || 0, 
+                            sSlots: team.sSlots || 0,
+                            currentBalance: team.currentBalance || team.initialBalance
+                        }));
+                    } else {
+                        this.teams = this.defaultTeams.map(t => ({
+                            name: t.name,
+                            initialBalance: t.initialBalance,
+                            currentBalance: t.initialBalance,
+                            pSlots: 0,
+                            sSlots: 0
+                        }));
+                    }
+                    if (r) this.auctionRecords = JSON.parse(r);
+                } catch(e) {
+                    this.teams = this.defaultTeams.map(t => ({
+                        name: t.name,
+                        initialBalance: t.initialBalance,
+                        currentBalance: t.initialBalance,
+                        pSlots: 0,
+                        sSlots: 0
+                    }));
+                }
+            },
+
+            saveData: function() {
+                try {
+                    localStorage.setItem('auc_final_teams', JSON.stringify(this.teams));
+                    localStorage.setItem('auc_final_records', JSON.stringify(this.auctionRecords));
+                } catch(e) {}
+            },
+            
+            // --- UI RENDERERS ---
+            renderAll: function() {
+                this.renderSelect();
+                this.renderAuctionTable();
+                this.renderHistory();
+                this.renderScoringInputs(); 
+                this.renderGlobalQuotaDashboard(); // NEW: Render Quota Dashboard
+            },
+
+            renderGlobalQuotaDashboard: function() {
+                const dashboard = document.getElementById('globalQuotaDashboard');
+                dashboard.innerHTML = '';
+                
+                const usedCounts = {};
+                this.auctionRecords.forEach(r => {
+                    if(r.bobot) usedCounts[r.bobot] = (usedCounts[r.bobot] || 0) + 1;
+                });
+
+                Object.keys(this.SOAL_CONFIG).forEach(bobot => {
+                    const cfg = this.SOAL_CONFIG[bobot];
+                    const used = usedCounts[bobot] || 0;
+                    const remain = cfg.max - used;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'p-1 rounded shadow-sm text-xs font-semibold';
+                    item.style.backgroundColor = (bobot === '75' || bobot === '50') ? '#fae8ff' : '#eff6ff'; // Light Purple/Blue
+
+                    item.innerHTML = `
+                        <div class="text-xs text-slate-700">${bobot}%</div>
+                        <div class="font-bold ${remain === 0 ? 'text-red-600' : 'text-green-600'}">${remain} / ${cfg.max}</div>
+                    `;
+                    dashboard.appendChild(item);
+                });
+            },
+
+
+            renderSelect: function() {
+                const sel = document.getElementById('inputTeam');
+                const val = sel.value;
+                sel.innerHTML = '';
+                this.teams.forEach((t, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = `${t.name} (Sisa: ${t.currentBalance})`;
+                    sel.appendChild(opt);
+                });
+                if(val && this.teams[val]) sel.value = val;
+            },
+
+            renderAuctionTable: function() {
+                const tbody = document.getElementById('scoreboardBody');
+                tbody.innerHTML = '';
+                
+                this.teams.forEach((t, i) => {
+                    // Hitung Durasi Total
+                    let totalDuration = 0;
+                    this.auctionRecords.filter(r => r.teamIndex == i).forEach(r => {
+                        const bobot = r.bobot.toString();
+                        if (this.SOAL_CONFIG[bobot]) {
+                            totalDuration += this.SOAL_CONFIG[bobot].duration;
+                        }
+                    });
+                    
+                    const total = t.pSlots + t.sSlots;
+                    let pIcon = t.pSlots > 0 ? `<div class="text-purple-700 font-bold">P</div>` : ``;
+                    let sIcon = t.sSlots > 0 ? `<div class="text-blue-700 font-bold">S(${t.sSlots})</div>` : ``;
+
+                    const slotIndicator = (t.pSlots > 0 || t.sSlots > 0) ? `
+                        <span class="inline-flex gap-1 text-sm">
+                            ${pIcon}
+                            ${sIcon}
+                        </span>` : `<span class="text-gray-400 text-sm">Kosong</span>`;
+
+
+                    const row = document.createElement('tr');
+                    row.className = "bg-white border-b hover:bg-slate-50 transition duration-200";
+                    row.innerHTML = `
+                        <td class="py-4 px-4 font-extrabold text-2xl">${t.name}</td>
+                        <td class="py-4 px-4 text-center font-mono font-bold text-3xl ${t.currentBalance < 0 ? 'text-red-500' : 'text-slate-700'}">${t.currentBalance}</td>
+                        <td class="py-4 px-4 text-center font-bold text-3xl text-blue-700">${totalDuration} Min</td> 
+                        <td class="py-4 px-4 text-center flex flex-col items-center">
+                            ${slotIndicator}
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full text-white shadow-sm block mt-1 ${total >= 3 ? 'bg-red-500' : 'bg-gray-400'}">${total} / 3 Kotak</span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            renderHistory: function() {
+                const list = document.getElementById('historyList');
+                list.innerHTML = '';
+                
+                if (this.auctionRecords.length === 0) {
+                    list.innerHTML = `<div class="text-center text-xs text-gray-400 mt-4 italic">Belum ada transaksi</div>`;
+                    return;
+                }
+
+                for(let i = this.auctionRecords.length - 1; i >= 0; i--) {
+                    const item = this.auctionRecords[i];
+                    const tName = this.teams[item.teamIndex]?.name || 'Data Hilang';
+                    const typeColor = item.type === 'PREMIUM' ? 'text-purple-600 bg-purple-50' : 'text-blue-600 bg-blue-50';
+
+                    const el = document.createElement('div');
+                    el.className = "bg-white p-2 rounded-lg border border-gray-200 flex justify-between items-center text-xs shadow-sm";
+                    el.innerHTML = `
+                        <div>
+                            <div class="font-bold text-slate-700 text-sm mb-1">${tName}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-1.5 py-0.5 rounded border ${typeColor} font-bold text-[10px]">${item.type}</span>
+                                <span class="font-mono font-bold text-gray-600 text-[10px] border border-gray-200 px-1 rounded bg-gray-50">${item.bobot}%</span>
+                                <span class="font-mono text-red-500 font-bold">- ${item.bidPrice}</span>
+                            </div>
+                        </div>
+                        <button onclick="app.showUndoConfirm(${i})" class="bg-red-50 text-red-400 w-7 h-7 rounded-full hover:bg-red-500 hover:text-white transition flex items-center justify-center" title="Batalkan">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    `;
+                    list.appendChild(el);
+                }
+            },
+
+            renderScoringInputs: function() {
+                const inputsDiv = document.getElementById('scoringInputs');
+                inputsDiv.innerHTML = '';
+                
+                if (this.auctionRecords.length === 0) {
+                    inputsDiv.innerHTML = `<p class="text-center text-gray-500 text-sm italic py-8">Lakukan Lelang terlebih dahulu untuk memunculkan panel penilaian.</p>`;
+                    return;
+                }
+
+                this.auctionRecords.forEach((item, index) => {
+                    const team = this.teams[item.teamIndex];
+                    const profitPercentage = item.bobot;
+                    const resultStatus = item.result || 'pending'; 
+                    
+                    let bgClass = resultStatus === 'correct' ? 'correct-answer' : resultStatus === 'wrong' ? 'wrong-answer' : 'bg-white';
+                    
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `p-4 border-2 rounded-lg shadow-sm flex justify-between items-center transition ${bgClass}`;
+                    itemDiv.innerHTML = `
+                        <div>
+                            <div class="font-extrabold text-sm mb-1">${team.name}</div>
+                            <div class="text-xs text-gray-600">
+                                <span>${item.type} (${profitPercentage}%)</span> - Dibayar: <span class="font-mono text-red-600">${item.bidPrice} Pts</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="app.setResult(${index}, 'correct')" class="px-4 py-2 rounded-lg font-bold text-xs shadow-md transition ${resultStatus === 'correct' ? 'bg-green-600 text-white' : 'bg-gray-200 hover:bg-green-500 hover:text-white'}">
+                                <i class="fas fa-check"></i> BENAR
+                            </button>
+                            <button onclick="app.setResult(${index}, 'wrong')" class="px-4 py-2 rounded-lg font-bold text-xs shadow-md transition ${resultStatus === 'wrong' ? 'bg-red-600 text-white' : 'bg-gray-200 hover:bg-red-500 hover:text-white'}">
+                                <i class="fas fa-times"></i> SALAH
+                            </button>
+                        </div>
+                    `;
+                    inputsDiv.appendChild(itemDiv);
+                });
+            },
+
+            renderFinalScoreTable: function(finalScores) {
+                const tbody = document.getElementById('finalScoreBody');
+                tbody.innerHTML = '';
+                
+                finalScores.sort((a, b) => b.finalScore - a.finalScore);
+
+                finalScores.forEach((score, index) => {
+                    let rankText = index + 1;
+                    let rankClass = '';
+                    if (rankText === 1) rankClass = 'bg-yellow-400 text-slate-800 text-lg font-black shadow-lg';
+                    else if (rankText === 2) rankClass = 'bg-gray-400 text-white font-extrabold';
+                    else if (rankText === 3) rankClass = 'bg-amber-700 text-white font-extrabold';
+                    else rankClass = 'bg-gray-200 text-gray-700';
+                    
+                    const row = document.createElement('tr');
+                    row.className = "bg-white border-b hover:bg-green-50/50 transition duration-200";
+                    row.innerHTML = `
+                        <td class="py-4 px-4 text-center">
+                            <span class="inline-block w-8 h-8 rounded-full ${rankClass} flex items-center justify-center">${rankText}</span>
+                        </td>
+                        <td class="py-4 px-4 font-bold text-slate-800 text-lg">${score.name}</td>
+                        <td class="py-4 px-4 text-center font-mono">${score.initialBalance}</td>
+                        <td class="py-4 px-4 text-center font-mono text-red-600">${score.totalBid}</td>
+                        <td class="py-4 px-4 text-center font-mono text-green-600">${score.totalProfit}</td>
+                        <td class="py-4 px-4 text-center font-mono text-red-600 font-bold">${score.totalLoss > 0 ? '-' + score.totalLoss : '0'}</td>
+                        <td class="py-4 px-4 text-center text-2xl font-extrabold text-green-700">${score.finalScore}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+            
+            // --- UTILITIES ---
+            toggleFullScreen: function() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        this.showAlert("Mode Layar Penuh diblokir oleh browser ini. Silakan tekan F11 pada keyboard.", true);
+                    });
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                }
+            },
+
+            showResetConfirm: function() {
+                this.pendingAction = () => {
+                    localStorage.removeItem('auc_final_teams');
+                    localStorage.removeItem('auc_final_hist');
+                    localStorage.removeItem('auc_final_records');
+                    location.reload();
+                };
+                
+                document.getElementById('confirmMsg').innerText = "HAPUS SEMUA DATA & RESET KE AWAL?\nData tidak bisa dikembalikan.";
+                document.getElementById('customConfirm').classList.remove('hidden');
+                document.getElementById('confirmBtnYes').onclick = this.pendingAction;
+            },
+
+            // --- SETUP MENU ---
+            openSetup: function() {
+                const modal = document.getElementById('setupModal');
+                let txt = "";
+                this.teams.forEach(t => txt += `${t.name}, ${t.initialBalance}\n`);
+                document.getElementById('setupInput').value = txt.trim();
+                modal.classList.remove('hidden');
+            },
+
+            closeSetup: function() {
+                document.getElementById('setupModal').classList.add('hidden');
+            },
+
+            saveSetup: function() {
+                const raw = document.getElementById('setupInput').value;
+                const lines = raw.split('\n');
+                const newTeams = [];
+                
+                lines.forEach(l => {
+                    const p = l.split(',');
+                    if(p.length >= 2) {
+                        const name = p[0].trim();
+                        const balance = parseInt(p[1].trim());
+                        if (name && !isNaN(balance)) {
+                            newTeams.push({
+                                name: name,
+                                initialBalance: balance,
+                                currentBalance: balance,
+                                pSlots: 0,
+                                sSlots: 0
+                            });
+                        }
+                    }
+                });
+
+                if(newTeams.length > 0) {
+                    this.teams = newTeams;
+                    this.auctionRecords = []; 
+                    this.saveData();
+                    this.renderAll();
+                    this.closeSetup();
+                    this.showAlert("Database Tim Berhasil Diupdate!", false);
+                } else {
+                    this.showAlert("Format Salah! Gunakan: Nama Tim, Saldo", true);
+                }
+            },
+
+            // --- MODALS & ALERTS ---
+            showAlert: function(msg, isError) {
+                const modal = document.getElementById('customAlert');
+                document.getElementById('alertMsg').innerText = msg;
+                document.getElementById('alertTitle').innerText = isError ? "GAGAL" : "SUKSES";
+                document.getElementById('alertIcon').className = isError ? "text-4xl mb-4 text-red-500" : "text-4xl mb-4 text-green-500";
+                document.getElementById('alertIcon').innerHTML = isError ? `<i class="fas fa-exclamation-triangle"></i>` : `<i class="fas fa-check-circle"></i>`;
+                modal.classList.remove('hidden');
+            },
+
+            closeConfirm: function() {
+                document.getElementById('customConfirm').classList.add('hidden');
+                this.pendingAction = null;
+            },
+            // --- END UTILITIES ---
+
+
+            // --- CHAMPION DISPLAY LOGIC (Tidak Dipakai di File Ini, tapi Dibiarkan Kosong) ---
+            renderChampionDisplay: function(show = true) {
+                 // Fungsi ini sengaja dikosongkan karena logika pengumuman pindah ke file terpisah
+            },
+            // --- END CHAMPION DISPLAY LOGIC ---
+
+
+            // --- ACTIONS ---
+            switchMode: function() {
+                const auctionP = document.getElementById('auctionPanel');
+                const scoringP = document.getElementById('scoringPanel');
+                const scoreD = document.getElementById('scoreDisplay');
+                const auctionD = document.getElementById('auctionDisplay');
+                const btn = document.getElementById('switchModeBtn');
+
+                this.mode = this.mode === 'auction' ? 'scoring' : 'auction';
+
+                if (this.mode === 'scoring') {
+                    // Mode Penilaian (Input Hasil)
+                    auctionP.classList.add('hidden');
+                    scoringP.classList.remove('hidden');
+                    auctionD.classList.add('hidden');
+                    scoreD.classList.remove('hidden');
+                    btn.classList.remove('bg-purple-600');
+                    btn.classList.add('bg-orange-600');
+                    document.getElementById('modeText').innerText = "Mode Lelang"; 
+                    this.calculateFinalScore(); // Hitung dan tampilkan tabel skor
+                } else {
+                    // Mode Lelang (Input Transaksi)
+                    auctionP.classList.remove('hidden');
+                    scoringP.classList.add('hidden'); // Sembunyikan panel penilaian
+                    auctionD.classList.remove('hidden');
+                    scoreD.classList.add('hidden'); // Sembunyikan tabel skor
+                    btn.classList.remove('bg-orange-600');
+                    btn.classList.add('bg-purple-600');
+                    document.getElementById('modeText').innerText = "Mode Penilaian"; 
+                }
+            },
+            
+            showScoreConfirm: function() {
+                this.calculateFinalScore(); 
+
+                this.pendingAction = () => {
+                    const pendingCount = this.auctionRecords.filter(r => r.result === 'pending').length;
+                    
+                    if (pendingCount > 0) {
+                        if (!confirm(`PERINGATAN: Masih ada ${pendingCount} soal yang belum dinilai. Lanjutkan? (Soal pending dianggap LOSS 100%)`)) {
+                            this.closeConfirm();
+                            return;
+                        }
+                    }
+                    this.calculateFinalScore(); 
+                    
+                    // Pindah ke tampilan skor
+                    document.getElementById('auctionDisplay').classList.add('hidden');
+                    document.getElementById('scoreDisplay').classList.remove('hidden');
+                    
+                    this.closeConfirm();
+                };
+
+                document.getElementById('confirmMsg').innerText = "Yakin ingin menyelesaikan penilaian dan menghitung skor akhir?";
+                document.getElementById('customConfirm').classList.remove('hidden');
+                document.getElementById('confirmBtnYes').onclick = this.pendingAction;
+            },
+
+            calculateFinalScore: function() {
+                const finalScores = this.teams.map(team => ({
+                    name: team.name,
+                    initialBalance: team.initialBalance,
+                    totalBid: 0,
+                    totalProfit: 0,
+                    totalLoss: 0, 
+                    finalScore: team.initialBalance 
+                }));
+
+                this.auctionRecords.forEach(item => {
+                    if (!finalScores[item.teamIndex]) return;
+                    
+                    const teamScore = finalScores[item.teamIndex];
+                    
+                    teamScore.totalBid += item.bidPrice;
+                    
+                    if (item.result === 'correct') {
+                        const profitAmount = Math.floor(item.bidPrice * (item.bobot / 100)); 
+                        teamScore.totalProfit += profitAmount;
+                        teamScore.finalScore += profitAmount;
+                        
+                    } else if (item.result === 'wrong') {
+                        const lossAmount = Math.floor(item.bidPrice * 0.70);
+                        teamScore.finalScore -= lossAmount;
+                        teamScore.totalLoss += lossAmount;
+                    } else if (item.result === 'pending') {
+                        const lossAmount = item.bidPrice;
+                        teamScore.finalScore -= lossAmount;
+                        teamScore.totalLoss += lossAmount;
+                    }
+                });
+                
+                this.finalScores = finalScores; 
+                this.renderFinalScoreTable(finalScores);
+            },
+            
+            randomizeNextBox: function() {
+                // FUNGSI INI DIHAPUS KARENA PERMINTAAN USER
+                this.showAlert("Fitur Acak Kotak telah dinonaktifkan.", true);
+            },
+            
+            selectType: function(type) {
+                document.getElementById('selectedType').value = type;
+                document.getElementById('selectedBobot').value = '';
+                
+                const btnP = document.getElementById('btnPremium');
+                const btnS = document.getElementById('btnStandar');
+                const bobotContainer = document.getElementById('bobotContainer');
+                const bobotOptions = document.getElementById('bobotOptions');
+                
+                btnP.classList.remove('selected-btn');
+                btnP.classList.add('opacity-60');
+                btnS.classList.remove('selected-btn');
+                btnS.classList.add('opacity-60');
+
+                if(type === 'PREMIUM') {
+                    btnP.classList.add('selected-btn');
+                    btnP.classList.remove('opacity-60');
+                    this.renderBobotButtons(['75', '50'], bobotOptions, 'purple');
+                } else {
+                    btnS.classList.add('selected-btn');
+                    btnS.classList.remove('opacity-60');
+                    this.renderBobotButtons(['40', '25'], bobotOptions, 'blue');
+                }
+                bobotContainer.classList.remove('hidden');
+            },
+
+            renderBobotButtons: function(bobots, container, color) {
+                container.innerHTML = '';
+                const usedCounts = {};
+                
+                this.auctionRecords.forEach(r => {
+                    if(r.bobot) usedCounts[r.bobot] = (usedCounts[r.bobot] || 0) + 1;
+                });
+
+                bobots.forEach(b => {
+                    const cfg = app.SOAL_CONFIG[b];
+                    const used = usedCounts[b] || 0;
+                    const remain = cfg.max - used;
+                    const disabled = remain <= 0;
+                    const colorClass = color === 'purple' ? 'hover:bg-purple-50 text-slate-600' : 'hover:bg-blue-50 text-slate-600';
+                    
+                    const btn = document.createElement('button');
+                    btn.id = `btnB${b}`;
+                    btn.onclick = () => app.selectBobot(b, cfg.price, disabled);
+                    btn.className = `border-2 border-gray-200 bg-white p-2 rounded-lg text-xs font-bold transition flex flex-col items-center ${disabled ? 'btn-disabled' : colorClass}`;
+                    btn.innerHTML = `
+                        <span>${b}% (Start ${cfg.price})</span>
+                        <span class="text-[10px] ${disabled ? 'text-red-500' : 'text-green-600'}">Sisa: ${remain}</span>
+                    `;
+                    
+                    if (disabled) btn.disabled = true;
+                    container.appendChild(btn);
+                });
+            },
+
+            selectBobot: function(percent, startPrice, disabled) {
+                if (disabled) return;
+                
+                document.getElementById('selectedBobot').value = percent;
+                document.getElementById('inputPrice').value = startPrice; 
+                
+                const btns = document.querySelectorAll('#bobotOptions button');
+                btns.forEach(b => {
+                    if (!b.disabled) {
+                        b.classList.remove('bobot-btn-active', 'border-purple-500', 'text-purple-700', 'border-blue-500', 'text-blue-700');
+                        b.classList.add('border-gray-200', 'text-slate-600');
+                    }
+                });
+
+                const activeBtn = document.getElementById(`btnB${percent}`);
+                const type = document.getElementById('selectedType').value;
+                
+                activeBtn.classList.add('bobot-btn-active');
+                activeBtn.classList.remove('border-gray-200', 'text-slate-600');
+                
+                if(type === 'PREMIUM') {
+                    activeBtn.classList.add('border-purple-500', 'text-purple-700', 'bg-purple-50');
+                } else {
+                    activeBtn.classList.add('border-blue-500', 'text-blue-700', 'bg-blue-50');
+                }
+            },
+
+            submitTransaction: function() {
+                const idx = document.getElementById('inputTeam').value;
+                const type = document.getElementById('selectedType').value;
+                const bobot = parseInt(document.getElementById('selectedBobot').value);
+                const price = parseInt(document.getElementById('inputPrice').value);
+
+                if (idx === "") return this.showAlert("Pilih Tim dulu!", true);
+                if (type === "") return this.showAlert("Klik Kategori Kotak!", true);
+                if (isNaN(bobot)) return this.showAlert("Pilih Bobot Soal!", true);
+                if (isNaN(price) || price <= 0) return this.showAlert("Harga harus diisi angka!", true);
+
+                const team = this.teams[idx];
+                const cfg = this.SOAL_CONFIG[bobot];
+                
+                let currentUsed = this.auctionRecords.filter(r => r.bobot === bobot).length;
+                if (currentUsed >= cfg.max) return this.showAlert(`Stok Soal Bobot ${bobot}% Sudah Habis!`, true);
+
+                if (team.currentBalance < price) return this.showAlert(`Saldo ${team.name} Kurang!`, true);
+                if (type === 'PREMIUM' && team.pSlots >= 1) return this.showAlert(`${team.name} sudah punya Premium!`, true);
+                if (type === 'STANDAR' && team.sSlots >= 2) return this.showAlert(`${team.name} slot Standar penuh!`, true);
+                if ((team.pSlots + team.sSlots) >= 3) return this.showAlert(`${team.name} keranjang penuh (3/3)!`, true);
+
+                team.currentBalance -= price;
+                if (type === 'PREMIUM') team.pSlots++; else team.sSlots++;
+
+                this.auctionRecords.push({ 
+                    teamIndex: idx, 
+                    type: type, 
+                    bidPrice: price, 
+                    bobot: bobot, 
+                    result: 'pending', 
+                    time: Date.now()
+                });
+                
+                this.saveData(); 
+                this.renderAll();
+                
+                document.getElementById('inputPrice').value = ''; 
+                document.getElementById('selectedBobot').value = '';
+                document.getElementById('bobotContainer').classList.add('hidden');
+                
+                this.selectType(type); 
+                
+                this.showAlert("Transaksi Berhasil!", false);
+            },
+
+            // --- UNDO ---
+            showUndoConfirm: function(index) {
+                this.pendingAction = () => {
+                    const item = this.auctionRecords[index];
+                    const team = this.teams[item.teamIndex];
+                    
+                    team.currentBalance += item.bidPrice;
+                    if (item.type === 'PREMIUM') team.pSlots--; else team.sSlots--;
+                    
+                    this.auctionRecords.splice(index, 1);
+                    this.saveData();
+                    this.renderAll();
+                    
+                    const currentType = document.getElementById('selectedType').value;
+                    if(currentType) this.selectType(currentType);
+                    
+                    this.closeConfirm();
+                };
+                
+                document.getElementById('confirmMsg').innerText = "Batalkan transaksi ini? Saldo dan slot akan dikembalikan.";
+                document.getElementById('customConfirm').classList.remove('hidden');
+                document.getElementById('confirmBtnYes').onclick = this.pendingAction;
+            },
+
+            // --- PENILAIAN LOGIC ---
+            setResult: function(recordIndex, status) {
+                this.auctionRecords[recordIndex].result = status;
+                this.saveData();
+                this.renderScoringInputs(); 
+            },
+        };
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
